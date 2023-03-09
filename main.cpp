@@ -78,7 +78,7 @@ int minimax(uint16_t player, uint16_t agent, int depth, bool is_maximizing, int 
     // the agent
     if (is_maximizing) {
         int best = -1000;
-        for (uint8_t choice : choices) {
+        for (uint16_t choice : choices) {
             agent |= 0b1 << choice;
             best = max(best, minimax(player, agent, depth + 1, false, alpha, beta));
             agent ^= 0b1 << choice;
@@ -93,7 +93,7 @@ int minimax(uint16_t player, uint16_t agent, int depth, bool is_maximizing, int 
     // the player
     else {
         int best = 1000;
-        for (uint8_t choice : choices) {
+        for (uint16_t choice : choices) {
             player |= 0b1 << choice;
             best = min(best, minimax(player, agent, depth + 1, true, alpha, beta));
             player ^= 0b1 << choice;
