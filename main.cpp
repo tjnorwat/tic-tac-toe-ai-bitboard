@@ -1,8 +1,8 @@
 #include <vector>
-#include <cstdint>
-#include <iostream>
 #include <random>
 #include <chrono>
+#include <cstdint>
+#include <iostream>
 
 using namespace std;
 
@@ -38,7 +38,6 @@ constexpr int evaluate(uint16_t player, uint16_t agent) {
 }
 
 
-// should be both boards combined
 constexpr bool is_draw(uint16_t board) {
     return (board & FULL_BOARD) == FULL_BOARD;
 }
@@ -141,13 +140,13 @@ void print_board(uint16_t x_board, uint16_t o_board) {
         for (int j = 2; j >= 0; j--) {
             idx = 0b1 << (i * 3 + j);
             if (x_board & idx) {
-                printf("X ");
+                cout << "X ";
             }
             else if (o_board & idx) {
-                printf("O ");
+                cout << "O ";
             }
             else {
-                printf("%d ", (i * 3 + j));
+                cout << (i * 3 + j) << " ";
             }
         }
         printf("\n");
@@ -161,17 +160,24 @@ void play_game(bool human_goes_first) {
 
     uint16_t move;
     uint16_t ai_move;
-
+    
     cout << "Game starting" << endl;
-    print_board(player, agent);
-    // if the player goes first or not 
+
+    if (human_goes_first) {
+        print_board(player, agent);
+    }
+    else {
+        print_board(agent, player);
+    }
+    
+    // keep track of whose turn it is 
     bool player_turn = human_goes_first;
 
     chrono::time_point<chrono::steady_clock> start, end;
 
     while(true) {
         if (player_turn) {
-            cout << "Choose and index to play" << endl;
+            cout << "Choose an index to play" << endl;
             cin >> move;
             player |= 0b1 << move;
         }
@@ -192,8 +198,16 @@ void play_game(bool human_goes_first) {
             agent |= 0b1 << ai_move;
         }
         player_turn = !player_turn;
-        print_board(player, agent);
 
+        // seeing which to give X and O to 
+        if (human_goes_first) {
+            print_board(player, agent);
+        }
+        else {
+            print_board(agent, player);
+        }
+
+        // terminal conditions 
         if (evaluate(player, agent) == -10) {
             cout << "Player wins" << endl;
             break;
@@ -211,7 +225,6 @@ void play_game(bool human_goes_first) {
 
 
 int main() {
-
     bool human_goes_first = false;
     play_game(human_goes_first);
     return 0;

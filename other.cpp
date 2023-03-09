@@ -4,12 +4,6 @@
 #include <array>
 #include <chrono>
 
-
-// using std::cout;
-// using std::cin;
-// using std::endl;
-// using std::chrono;
-
 using namespace std;
 
 #define WIN 1000
