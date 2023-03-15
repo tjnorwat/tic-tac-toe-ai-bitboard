@@ -3,6 +3,7 @@
 #include <chrono>
 #include <cstdint>
 #include <iostream>
+#include <array>
 
 using namespace std;
 
@@ -23,16 +24,20 @@ static constexpr uint16_t DIAG_DOWN = 0b0000000100010001;
 
 
 // this function checks individual player win positions and converts it to numerical values
+static constexpr array<uint16_t, 8> WINNING_PATTERNS = {
+    COL_1, COL_2, COL_3,
+    ROW_1, ROW_2, ROW_3,
+    DIAG_UP, DIAG_DOWN
+};
+
 constexpr int evaluate(uint16_t player, uint16_t agent) {
-    if (((player & COL_1) == COL_1) || ((player & COL_2) == COL_2) || ((player & COL_3) == COL_3) ||
-        ((player & ROW_1) == ROW_1) || ((player & ROW_2) == ROW_2) || ((player & ROW_3) == ROW_3) ||
-        ((player & DIAG_UP) == DIAG_UP) || ((player & DIAG_DOWN) == DIAG_DOWN)) {
-        return -10;
-    }
-    else if (((agent & COL_1) == COL_1) || ((agent & COL_2) == COL_2) || ((agent & COL_3) == COL_3) ||
-             ((agent & ROW_1) == ROW_1) || ((agent & ROW_2) == ROW_2) || ((agent & ROW_3) == ROW_3) ||
-             ((agent & DIAG_UP) == DIAG_UP) || ((agent & DIAG_DOWN) == DIAG_DOWN)) {
-        return 10;
+    for (uint16_t pattern : WINNING_PATTERNS) {
+        if ((player & pattern) == pattern) {
+            return -10;
+        }
+        if ((agent & pattern) == pattern) {
+            return 10;
+        }
     }
     return 0;
 }
@@ -149,7 +154,7 @@ void print_board(uint16_t x_board, uint16_t o_board) {
                 cout << (i * 3 + j) << " ";
             }
         }
-        printf("\n");
+        cout << endl;
     }
 }
 
