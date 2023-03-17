@@ -29,13 +29,13 @@ static constexpr uint16_t WINNING_PATTERNS[] = {
     DIAG_UP, DIAG_DOWN
 };
 
-constexpr int evaluate(uint16_t player, uint16_t agent) {
+constexpr int evaluate(uint16_t player, uint16_t agent, int depth) {
     for (uint16_t pattern : WINNING_PATTERNS) {
         if ((player & pattern) == pattern) {
-            return -10;
+            return -10 + depth;
         }
         else if ((agent & pattern) == pattern) {
-            return 10;
+            return 10 - depth;
         }
     }
     return 0;
@@ -62,53 +62,31 @@ vector<uint16_t> possible_moves(uint16_t player, uint16_t agent) {
 }
 
 
-int minimax(uint16_t player, uint16_t agent, int depth, bool is_maximizing, int alpha, int beta, int& nodes_counted) {
-    int score = evaluate(player, agent);
+int negamax(uint16_t player, uint16_t agent, int depth, int alpha, int beta) {
+    int score = evaluate(player, agent, depth);
 
-    ++nodes_counted;
-    // agent won 
-    if (score == 10) {
-        return score - depth;
-    }
-    // player won 
-    else if (score == -10) {
-        return score + depth;
+    if (score) {
+        return score;
     }
     else if (is_draw(player | agent)) {
         return 0;
     }
+
     vector<uint16_t> choices = possible_moves(player, agent);
 
-    // the agent
-    if (is_maximizing) {
-        int best = -1000;
-        for (uint16_t choice : choices) {
-            agent |= 0b1 << choice;
-            best = max(best, minimax(player, agent, depth + 1, false, alpha, beta, nodes_counted));
-            agent ^= 0b1 << choice;
+    int best = -1000;
+    for (uint16_t choice : choices) {
+        agent |= 0b1 << choice;
+        int val = -negamax(agent, player, depth + 1, -beta, -alpha);
+        agent ^= 0b1 << choice;
 
-            alpha = max(alpha, best);
-            if (beta <= alpha) {
-                break;
-            }
+        best = max(best, val);
+        alpha = max(alpha, val);
+        if (beta <= alpha) {
+            break;
         }
-        return best;
     }
-    // the player
-    else {
-        int best = 1000;
-        for (uint16_t choice : choices) {
-            player |= 0b1 << choice;
-            best = min(best, minimax(player, agent, depth + 1, true, alpha, beta, nodes_counted));
-            player ^= 0b1 << choice;
-
-            beta = min(beta, best);
-            if (beta <= alpha) {
-                break;
-            }
-        }
-        return best;
-    }
+    return best;
 }
 
 
@@ -116,7 +94,6 @@ int minimax(uint16_t player, uint16_t agent, int depth, bool is_maximizing, int 
 uint16_t find_best_move(uint16_t player, uint16_t agent) {
     int best_val = -1000;
     uint16_t best_move;
-    int nodes_counted = 0;
     // indexes of moves
     vector<uint16_t> choices = possible_moves(player, agent);
 
@@ -124,7 +101,7 @@ uint16_t find_best_move(uint16_t player, uint16_t agent) {
         // do the move
         agent |= 0b1 << choice;
 
-        int move_val = minimax(player, agent, 0, false, -1000, 1000, nodes_counted);
+        int move_val = -negamax(agent, player, 0, -1000, 1000);
 
         // undo the move
         agent ^= 0b1 << choice;
@@ -134,7 +111,6 @@ uint16_t find_best_move(uint16_t player, uint16_t agent) {
             best_val = move_val;
         }
     }
-    cout << "nodes counted " << nodes_counted << endl;
     return best_move;
 }
 
@@ -187,7 +163,6 @@ void play_game(bool human_goes_first) {
             player |= 0b1 << move;
         }
         else {
-            
             start = chrono::steady_clock::now();
             ai_move = find_best_move(player, agent);
             end = chrono::steady_clock::now();
@@ -213,11 +188,11 @@ void play_game(bool human_goes_first) {
         }
 
         // terminal conditions 
-        if (evaluate(player, agent) == -10) {
+        if (evaluate(player, agent, 0) == -10) {
             cout << "Player wins" << endl;
             break;
         }
-        else if (evaluate(player, agent) == 10) {
+        else if (evaluate(player, agent, 0) == 10) {
             cout << "Agent wins" << endl;
             break;
         }
