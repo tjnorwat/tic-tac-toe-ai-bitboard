@@ -105,7 +105,7 @@ void clear_hash_table() {
     }
 }
 
-constexpr tt read_hash_entry() {
+tt read_hash_entry() {
     tt hash_entry = hash_table[hash_key & hash_size];
     return hash_entry;
 }
@@ -122,7 +122,7 @@ void write_hash_entry(uint16_t depth, uint16_t hash_flag, int value) {
 }
 
 // this function checks individual player win positions and converts it to numerical values
-constexpr int evaluate(uint16_t player, uint16_t agent, uint16_t depth) {
+int evaluate(uint16_t player, uint16_t agent, uint16_t depth) {
     for (uint16_t pattern : WINNING_PATTERNS) {
         if ((player & pattern) == pattern) {
             return -10 + depth;
