@@ -9,3 +9,5 @@ Seif's performance on my computer takes about `0.5` seconds with no compiler opt
 My program on my computer takes about `0.0077` seconds with no compiler optimization and about `0.0027` seconds with the `-Ofast` flag.
 
 The performance difference is about 45 times greater!
+
+Diving a little deeper, we can implement negamax with transpositions tables. These tables allow us to store different game positions with their heuristic value so we don't have to recalculate every search call. This speeds up our our searching about 3 times, taking just `.001` seconds on the first state.
