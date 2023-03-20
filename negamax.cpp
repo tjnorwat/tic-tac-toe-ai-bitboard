@@ -106,8 +106,7 @@ void clear_hash_table() {
 }
 
 tt read_hash_entry() {
-    tt hash_entry = hash_table[hash_key & hash_size];
-    return hash_entry;
+    return hash_table[hash_key & hash_size];
 }
 
 
@@ -186,7 +185,7 @@ int negamax(uint16_t player, uint16_t agent, uint16_t depth, int alpha, int beta
 
     vector<uint16_t> choices = possible_moves(player, agent);
 
-    int value = -1000;
+    int value = INT32_MIN;
     for (uint16_t choice : choices) {
         agent |= 0b1 << choice;
         hash_key ^= marker_keys[marker][choice];
@@ -220,7 +219,7 @@ int negamax(uint16_t player, uint16_t agent, uint16_t depth, int alpha, int beta
 
 
 uint16_t find_best_move(uint16_t player, uint16_t agent) {
-    int best_val = -1000;
+    int best_val = INT32_MIN;
     uint16_t best_move;
     vector<uint16_t> choices = possible_moves(player, agent);
 
@@ -228,7 +227,7 @@ uint16_t find_best_move(uint16_t player, uint16_t agent) {
         agent |= 0b1 << choice;
         hash_key ^= marker_keys[1][choice];
 
-        int move_val = -negamax(agent, player, 0, -1000, 1000, false);
+        int move_val = -negamax(agent, player, 0, INT32_MIN, INT32_MAX, false);
 
         // undo the move / hash
         agent ^= 0b1 << choice;
