@@ -190,6 +190,7 @@ int negamax(uint16_t player, uint16_t agent, uint16_t depth, int alpha, int beta
     for (uint16_t choice : choices) {
         agent |= 0b1 << choice;
         hash_key ^= marker_keys[marker][choice];
+        // have to swap the boards 
         value = max(value, -negamax(agent, player, depth + 1, -beta, -alpha, !marker));
 
         agent ^= 0b1 << choice;
