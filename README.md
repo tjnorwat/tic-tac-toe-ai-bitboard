@@ -15,3 +15,5 @@ Diving a little deeper, we can implement negamax with transpositions tables. The
 Switching over to linux gave another performance boost. I have a newer g++ version on windows than on linux, so I am not sure if that contributes in any way, but we can search in about `.0003` seconds. This is almost 10 times faster without using the transposition tables! Comparing against Seif, it is about 407 times faster as well!
 
 Another improvement we can make is using int_min and int_max instead of arbitrary low/high values for alpha/beta. After swapping to use the min and max of integer, our performance is nearly 3x, coming in at a blazing `.00013` seconds. 
+
+Getting rid of the possible_moves() function and inlining the algorithm gives us another 3x performance increase because we are no longer using vectors and dynamically adding elements. After inlining the function to the find_best_move() and negamax() function, it takes about `.000044` seconds. 

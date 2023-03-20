@@ -140,18 +140,18 @@ constexpr bool is_draw(uint16_t board) {
 
 
 // gets all possible moves a player can put a marker 
-vector<uint16_t> possible_moves(uint16_t player, uint16_t agent) {
-    // since we are using 16 bits to represent the board, we have to xor the places we can't go 
-    uint16_t board = (~(player | agent)) ^ OUT_OF_BOUNDS;
-    vector<uint16_t> choices;
-    while (board) {
-        // fast way of getting index of lsb
-        uint16_t idx = __builtin_ctz(board);
-        choices.push_back(idx);
-        board ^= 0b1 << idx;
-    }
-    return choices;
-}
+// vector<uint16_t> possible_moves(uint16_t player, uint16_t agent) {
+//     // since we are using 16 bits to represent the board, we have to xor the places we can't go 
+//     uint16_t board = (~(player | agent)) ^ OUT_OF_BOUNDS;
+//     vector<uint16_t> choices;
+//     while (board) {
+//         // fast way of getting index of lsb
+//         uint16_t idx = __builtin_ctz(board);
+//         choices.push_back(idx);
+//         board ^= 0b1 << idx;
+//     }
+//     return choices;
+// }
 
 // marker is used for the tt, between 0 player and 1 agent 
 int negamax(uint16_t player, uint16_t agent, uint16_t depth, int alpha, int beta, bool marker) {
@@ -183,10 +183,14 @@ int negamax(uint16_t player, uint16_t agent, uint16_t depth, int alpha, int beta
         return 0;
     }
 
-    vector<uint16_t> choices = possible_moves(player, agent);
+    // vector<uint16_t> choices = possible_moves(player, agent);
 
     int value = INT32_MIN;
-    for (uint16_t choice : choices) {
+
+    uint16_t board = (~(player | agent)) ^ OUT_OF_BOUNDS;
+    while (board) {
+        uint16_t choice = __builtin_ctz(board);
+        board ^= 0b1 << choice;
         agent |= 0b1 << choice;
         hash_key ^= marker_keys[marker][choice];
         // have to swap the boards 
@@ -221,9 +225,13 @@ int negamax(uint16_t player, uint16_t agent, uint16_t depth, int alpha, int beta
 uint16_t find_best_move(uint16_t player, uint16_t agent) {
     int best_val = INT32_MIN;
     uint16_t best_move;
-    vector<uint16_t> choices = possible_moves(player, agent);
+    // vector<uint16_t> choices = possible_moves(player, agent);
 
-    for (uint16_t choice : choices) {
+    uint16_t board = (~(player | agent)) ^ OUT_OF_BOUNDS;
+    while (board) {
+        uint16_t choice = __builtin_ctz(board);
+        board ^= 0b1 << choice;
+
         agent |= 0b1 << choice;
         hash_key ^= marker_keys[1][choice];
 
