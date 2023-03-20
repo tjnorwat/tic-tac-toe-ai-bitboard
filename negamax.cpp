@@ -337,6 +337,7 @@ void play_game(bool human_goes_first) {
 
 int main() {
     init_random_keys();
+    clear_hash_table();
     // hash_key = generate_hash_key();
 
     bool human_goes_first = false;
