@@ -219,7 +219,6 @@ int negamax(uint16_t player, uint16_t agent, uint16_t depth, int alpha, int beta
 }
 
 
-// Define the find_best_move function with transposition table lookup
 uint16_t find_best_move(uint16_t player, uint16_t agent) {
     int best_val = -1000;
     uint16_t best_move;
@@ -231,6 +230,7 @@ uint16_t find_best_move(uint16_t player, uint16_t agent) {
 
         int move_val = -negamax(agent, player, 0, -1000, 1000, false);
 
+        // undo the move / hash
         agent ^= 0b1 << choice;
         hash_key ^= marker_keys[1][choice];
 
