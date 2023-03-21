@@ -26,7 +26,6 @@ static constexpr uint16_t WINNING_PATTERNS[] = {
     DIAG_UP, DIAG_DOWN
 };
 
-
 // key for transposition table 
 uint64_t hash_key = 0;
 
@@ -39,14 +38,11 @@ void init_random_keys() {
     uniform_int_distribution<uint64_t> dis;
 
     // looping over players ( X and O )
-    for (int i = 0; i < 2; ++i) {
+    for (int i = 0; i < 2; ++i) 
         // looping over board coordinates
-        for (int j = 0; j < 9; ++j) {
+        for (int j = 0; j < 9; ++j) 
             marker_keys[i][j] = dis(gen);
-        }
-    }
 }
-
 
 // i think this is mainly for starting positions
 // since the board is empty it should just be 0 
@@ -74,7 +70,6 @@ uint64_t generate_hash_key(uint16_t player, uint16_t agent) {
     }
     return final_key;
 }
-
 
 // 2 ^ n - 1
 // for fast 'modulus'
@@ -109,7 +104,6 @@ tt read_hash_entry() {
     return hash_table[hash_key & hash_size];
 }
 
-
 void write_hash_entry(uint16_t depth, uint16_t hash_flag, int value) {
     // if the hash size is of power 2^n - 1 we can use the and operator instead of modulus
     tt *hash_entry = &hash_table[hash_key & hash_size];
@@ -123,12 +117,10 @@ void write_hash_entry(uint16_t depth, uint16_t hash_flag, int value) {
 // this function checks individual player win positions and converts it to numerical values
 int evaluate(uint16_t player, uint16_t agent, uint16_t depth) {
     for (uint16_t pattern : WINNING_PATTERNS) {
-        if ((player & pattern) == pattern) {
+        if ((player & pattern) == pattern) 
             return -10 + depth;
-        }
-        else if ((agent & pattern) == pattern) {
+        else if ((agent & pattern) == pattern)
             return 10 - depth;
-        }
     }
     return 0;
 }
@@ -138,7 +130,6 @@ constexpr bool is_draw(uint16_t board) {
     return (board & FULL_BOARD) == FULL_BOARD;
 }
 
-
 // marker is used for the tt, between 0 player and 1 agent 
 int negamax(uint16_t player, uint16_t agent, uint16_t depth, int alpha, int beta, bool marker) {
     int alpha_orig = alpha;
@@ -147,28 +138,23 @@ int negamax(uint16_t player, uint16_t agent, uint16_t depth, int alpha, int beta
     // tt entry = read_hash_entry();
     tt entry = hash_table[hash_key & hash_size];
     if (entry.hash_key == hash_key && entry.depth >= depth) {
-        if (entry.flag == hash_flag_exact) {
+        if (entry.flag == hash_flag_exact)
             return entry.value;
-        }
-        else if (entry.flag == hash_flag_alpha) {
+        else if (entry.flag == hash_flag_alpha)
             alpha = max(alpha, entry.value);
-        }
-        else if (entry.flag == hash_flag_beta) {
+        else if (entry.flag == hash_flag_beta) 
             beta = min(beta, entry.value);
-        }
-        if (alpha >= beta) {
+
+        if (alpha >= beta)
             return entry.value;
-        }
     }
 
     int score = evaluate(player, agent, depth);
 
-    if (score) {
+    if (score)
         return score;
-    }
-    else if (is_draw(player | agent)) {
+    else if (is_draw(player | agent))
         return 0;
-    }
 
     int value = INT32_MIN;
     // go through open positions 
@@ -185,28 +171,24 @@ int negamax(uint16_t player, uint16_t agent, uint16_t depth, int alpha, int beta
         hash_key ^= marker_keys[marker][choice];
 
         alpha = max(alpha, value);
-        if (alpha >= beta) {
+        if (alpha >= beta)
             break;
-        }
     }
 
     // adding position in tt
     entry.value = value;
-    if (value <= alpha_orig) {
+    if (value <= alpha_orig)
         entry.flag = hash_flag_beta;
-    }
-    else if (value >= beta) {
+    else if (value >= beta)
         entry.flag = hash_flag_alpha;
-    }
-    else {
+    else
         entry.flag = hash_flag_exact;
-    }
+
     entry.depth = depth;
 
     write_hash_entry(entry.depth, entry.flag, entry.value);
     return value;
 }
-
 
 uint16_t find_best_move(uint16_t player, uint16_t agent) {
     int best_val = INT32_MIN;
@@ -238,26 +220,21 @@ uint16_t find_best_move(uint16_t player, uint16_t agent) {
     return best_move;
 }
 
-
 void print_board(uint16_t x_board, uint16_t o_board) {
     uint16_t idx;
     for (int i = 2; i >= 0; i--) {
         for (int j = 2; j >= 0; j--) {
             idx = 1u << (i * 3 + j);
-            if (x_board & idx) {
+            if (x_board & idx)
                 cout << "X ";
-            }
-            else if (o_board & idx) {
+            else if (o_board & idx)
                 cout << "O ";
-            }
-            else {
+            else
                 cout << (i * 3 + j) << " ";
-            }
         }
         cout << endl;
     }
 }
-
 
 void play_game(bool human_goes_first) {
     uint16_t player = 0u;
@@ -268,12 +245,10 @@ void play_game(bool human_goes_first) {
     
     cout << "Game starting" << endl;
 
-    if (human_goes_first) {
+    if (human_goes_first)
         print_board(player, agent);
-    }
-    else {
+    else
         print_board(agent, player);
-    }
     
     // keep track of whose turn it is 
     bool player_turn = human_goes_first;
@@ -306,12 +281,11 @@ void play_game(bool human_goes_first) {
         player_turn = !player_turn;
         
         // seeing which to give X and O to 
-        if (human_goes_first) {
+        if (human_goes_first)
             print_board(player, agent);
-        }
-        else {
+        else
             print_board(agent, player);
-        }
+
         int value = evaluate(player, agent, 0);
 
         // terminal conditions 
@@ -329,7 +303,6 @@ void play_game(bool human_goes_first) {
         }
     }
 }
-
 
 int main() {
     init_random_keys();
