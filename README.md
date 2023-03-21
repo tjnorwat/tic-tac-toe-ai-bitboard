@@ -1,19 +1,23 @@
-# Tic Tac Toe AI with bitboard implementation 
-This is a little program to play the classic game tic tac toe but with efficiency in mind. Bitboards are a data structure that represent the game board using binary digits, which allows us to perform bitwise operations in order to quickly and efficiently make moves. This approach significantly reduces the amount of memory required to store the game state, which ultimately leads to faster processing times. This implementation uses minimax with alpha beta in order to make the best move. It also takes into account the depth at which it will win/lose. 
+# Tic Tac Toe AI with Bitboard Implementation
 
-# Performance 
-I borrowed George Seif's implementation from [here](https://github.com/GeorgeSeif/Tic-Tac-Toe-AI#algorithm-details) and is under the file name `other.cpp`. I made a few modifications so that the AI could go first so that we could see the performance difference between the 2 implementations.  
+In this project, I implemented an efficient version of the classic Tic Tac Toe game using bitboards. Bitboards are a data structure that represents the game board with binary digits, enabling the use of bitwise operations for quick and efficient move execution. This approach substantially decreases the memory needed to store the game state, leading to faster processing times. My implementation employs the Minimax algorithm with Alpha-Beta pruning to make the best move while also considering the depth at which it will win/lose.
 
-Seif's performance on my computer takes about `0.5` seconds with no compiler optimization and about `0.122` seconds with the `-Ofast` flag. 
+## Performance
 
-My program on my computer takes about `0.0077` seconds with no compiler optimization and about `0.0027` seconds with the `-Ofast` flag.
+I adapted George Seif's implementation found [here](https://github.com/GeorgeSeif/Tic-Tac-Toe-AI#algorithm-details) and saved it under the filename `other.cpp`. To measure the performance difference between the two implementations, I modified Seif's implementation to allow the AI to make the first move.
 
-The performance difference is about 45 times greater!
+On my computer, Seif's implementation took about `0.5` seconds without compiler optimization and approximately `0.122` seconds with the `-Ofast` flag.
 
-Diving a little deeper, we can implement negamax with transpositions tables. These tables allow us to store different game positions with their heuristic value so we don't have to recalculate every search call. This speeds up our our searching about 3 times, taking just `.001` seconds on the first state.
+My implementation took about `0.0077` seconds without compiler optimization and roughly `0.0027` seconds with the `-Ofast` flag.
 
-Switching over to linux gave another performance boost. I have a newer g++ version on windows than on linux, so I am not sure if that contributes in any way, but we can search in about `.0003` seconds. This is almost 10 times faster without using the transposition tables! Comparing against Seif, it is about 407 times faster as well!
+This results in a performance difference of about 45 times!
 
-Another improvement we can make is using int_min and int_max instead of arbitrary low/high values for alpha/beta. After swapping to use the min and max of integer, our performance is nearly 3x, coming in at a blazing `.00013` seconds. 
+To further improve performance, I implemented the Negamax algorithm with transposition tables. These tables store different game positions along with their heuristic values, eliminating the need to recalculate each search call. This enhancement speeds up my search by about `3` times, taking just `.001` seconds on the first state.
 
-Getting rid of the possible_moves() function and inlining the algorithm gives us another 3x performance increase because we are no longer using vectors and dynamically adding elements. After inlining the function to the find_best_move() and negamax() function, it takes about `.000044` seconds. 
+Switching to Linux provided an additional performance boost. I observed a search time of about `.0003` seconds, which is almost `10` times faster than without using transposition tables! Compared to Seif's implementation, my approach is about `407` times faster!
+
+By replacing arbitrary low/high values for Alpha/Beta with `INT_MIN` and `INT_MAX`, my performance improved by almost 3 times, clocking in at an impressive `.00013` seconds.
+
+Finally, I eliminated the `possible_moves()` function and inlined the algorithm, resulting in another 3 times performance increase. This optimization removed the need for vectors and dynamic element addition. After inlining the function in the `find_best_move()` and `negamax()` functions, my implementation achieved a search time of about `.000042` seconds.
+
+Comparing Seif's `.5` seconds and my best time so far `.000042`, it is about `11,905` times faster. Comparing his `.122` time with the fast flag, we get about `2,905` times faster which is probably a more accurate comparison, because both programs are compiled with the fast flag. 
