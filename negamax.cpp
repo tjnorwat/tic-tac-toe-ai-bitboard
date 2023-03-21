@@ -1,4 +1,4 @@
-#include <vector>
+// #include <vector>
 #include <random>
 #include <chrono>
 #include <cstdint>
@@ -79,7 +79,8 @@ uint64_t generate_hash_key(uint16_t player, uint16_t agent) {
 
 // 2 ^ n - 1
 // for fast 'modulus'
-uint16_t const hash_size = 32767;
+uint16_t const hash_size = 2047;
+// uint16_t const hash_size = 32767;
 // uint16_t const hash_size = 65535;
 // uint32_t const hash_size = 524288;
 
@@ -98,9 +99,9 @@ tt hash_table[hash_size];
 
 void clear_hash_table() {
     for (int i = 0; i < hash_size; ++i) {
-        hash_table[i].hash_key = 0;
-        hash_table[i].depth = 0;
-        hash_table[i].flag = 0;
+        hash_table[i].hash_key = 0ULL;
+        hash_table[i].depth = 0u;
+        hash_table[i].flag = 0u;
         hash_table[i].value = 0;
     }
 }
@@ -155,10 +156,11 @@ constexpr bool is_draw(uint16_t board) {
 
 // marker is used for the tt, between 0 player and 1 agent 
 int negamax(uint16_t player, uint16_t agent, uint16_t depth, int alpha, int beta, bool marker) {
-
     int alpha_orig = alpha;
 
-    tt entry = read_hash_entry();
+    // see if this position is in the transposition table 
+    // tt entry = read_hash_entry();
+    tt entry = hash_table[hash_key & hash_size];
     if (entry.hash_key == hash_key && entry.depth >= depth) {
         if (entry.flag == hash_flag_exact) {
             return entry.value;
@@ -186,17 +188,17 @@ int negamax(uint16_t player, uint16_t agent, uint16_t depth, int alpha, int beta
     // vector<uint16_t> choices = possible_moves(player, agent);
 
     int value = INT32_MIN;
-
+    // go through open positions 
     uint16_t board = (~(player | agent)) ^ OUT_OF_BOUNDS;
     while (board) {
         uint16_t choice = __builtin_ctz(board);
-        board ^= 0b1 << choice;
-        agent |= 0b1 << choice;
+        board ^= 1u << choice;
+        agent |= 1u << choice;
         hash_key ^= marker_keys[marker][choice];
         // have to swap the boards 
         value = max(value, -negamax(agent, player, depth + 1, -beta, -alpha, !marker));
-
-        agent ^= 0b1 << choice;
+        // undo move / hash
+        agent ^= 1u << choice;
         hash_key ^= marker_keys[marker][choice];
 
         alpha = max(alpha, value);
@@ -205,6 +207,7 @@ int negamax(uint16_t player, uint16_t agent, uint16_t depth, int alpha, int beta
         }
     }
 
+    // adding position in tt
     entry.value = value;
     if (value <= alpha_orig) {
         entry.flag = hash_flag_beta;
@@ -227,18 +230,22 @@ uint16_t find_best_move(uint16_t player, uint16_t agent) {
     uint16_t best_move;
     // vector<uint16_t> choices = possible_moves(player, agent);
 
+    // board represents the positions where there is an open slot
     uint16_t board = (~(player | agent)) ^ OUT_OF_BOUNDS;
     while (board) {
+        // get the index of an open position
         uint16_t choice = __builtin_ctz(board);
-        board ^= 0b1 << choice;
+        // remove that index 
+        board ^= 1u << choice;
 
-        agent |= 0b1 << choice;
+        // play the index 
+        agent |= 1u << choice;
         hash_key ^= marker_keys[1][choice];
 
         int move_val = -negamax(agent, player, 0, INT32_MIN, INT32_MAX, false);
 
         // undo the move / hash
-        agent ^= 0b1 << choice;
+        agent ^= 1u << choice;
         hash_key ^= marker_keys[1][choice];
 
         if (move_val > best_val) {
@@ -254,7 +261,7 @@ void print_board(uint16_t x_board, uint16_t o_board) {
     uint16_t idx;
     for (int i = 2; i >= 0; i--) {
         for (int j = 2; j >= 0; j--) {
-            idx = 0b1 << (i * 3 + j);
+            idx = 1u << (i * 3 + j);
             if (x_board & idx) {
                 cout << "X ";
             }
@@ -271,8 +278,8 @@ void print_board(uint16_t x_board, uint16_t o_board) {
 
 
 void play_game(bool human_goes_first) {
-    uint16_t player = UINT16_C(0b0);
-    uint16_t agent = UINT16_C(0b0);
+    uint16_t player = 0u;
+    uint16_t agent = 0u;
 
     uint16_t move;
     uint16_t ai_move;
@@ -295,7 +302,7 @@ void play_game(bool human_goes_first) {
         if (player_turn) {
             cout << "Choose an index to play" << endl;
             cin >> move;
-            player |= 0b1 << move;
+            player |= 1u << move;
             hash_key ^= marker_keys[0][move];
         }
         else {
@@ -311,7 +318,7 @@ void play_game(bool human_goes_first) {
             cout << "Agent played at index " << ai_move << endl;
             cout << endl;
 
-            agent |= 0b1 << ai_move;
+            agent |= 1u << ai_move;
             hash_key ^= marker_keys[1][ai_move];
         }
         player_turn = !player_turn;
