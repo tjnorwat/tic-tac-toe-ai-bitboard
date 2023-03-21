@@ -1,4 +1,3 @@
-// #include <vector>
 #include <random>
 #include <chrono>
 #include <cstdint>
@@ -140,20 +139,6 @@ constexpr bool is_draw(uint16_t board) {
 }
 
 
-// gets all possible moves a player can put a marker 
-// vector<uint16_t> possible_moves(uint16_t player, uint16_t agent) {
-//     // since we are using 16 bits to represent the board, we have to xor the places we can't go 
-//     uint16_t board = (~(player | agent)) ^ OUT_OF_BOUNDS;
-//     vector<uint16_t> choices;
-//     while (board) {
-//         // fast way of getting index of lsb
-//         uint16_t idx = __builtin_ctz(board);
-//         choices.push_back(idx);
-//         board ^= 0b1 << idx;
-//     }
-//     return choices;
-// }
-
 // marker is used for the tt, between 0 player and 1 agent 
 int negamax(uint16_t player, uint16_t agent, uint16_t depth, int alpha, int beta, bool marker) {
     int alpha_orig = alpha;
@@ -184,8 +169,6 @@ int negamax(uint16_t player, uint16_t agent, uint16_t depth, int alpha, int beta
     else if (is_draw(player | agent)) {
         return 0;
     }
-
-    // vector<uint16_t> choices = possible_moves(player, agent);
 
     int value = INT32_MIN;
     // go through open positions 
@@ -228,7 +211,6 @@ int negamax(uint16_t player, uint16_t agent, uint16_t depth, int alpha, int beta
 uint16_t find_best_move(uint16_t player, uint16_t agent) {
     int best_val = INT32_MIN;
     uint16_t best_move;
-    // vector<uint16_t> choices = possible_moves(player, agent);
 
     // board represents the positions where there is an open slot
     uint16_t board = (~(player | agent)) ^ OUT_OF_BOUNDS;
