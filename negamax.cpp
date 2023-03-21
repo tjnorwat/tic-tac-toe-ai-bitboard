@@ -125,7 +125,6 @@ int evaluate(uint16_t player, uint16_t agent, uint16_t depth) {
     return 0;
 }
 
-
 constexpr bool is_draw(uint16_t board) {
     return (board & FULL_BOARD) == FULL_BOARD;
 }
