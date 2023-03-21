@@ -3,7 +3,6 @@
 #include <chrono>
 #include <cstdint>
 #include <iostream>
-#include <array>
 
 using namespace std;
 
@@ -24,7 +23,7 @@ static constexpr uint16_t DIAG_DOWN = 0b0000000100010001;
 
 
 // this function checks individual player win positions and converts it to numerical values
-static constexpr array<uint16_t, 8> WINNING_PATTERNS = {
+static constexpr uint16_t WINNING_PATTERNS[] = {
     COL_1, COL_2, COL_3,
     ROW_1, ROW_2, ROW_3,
     DIAG_UP, DIAG_DOWN
@@ -35,7 +34,7 @@ constexpr int evaluate(uint16_t player, uint16_t agent) {
         if ((player & pattern) == pattern) {
             return -10;
         }
-        if ((agent & pattern) == pattern) {
+        else if ((agent & pattern) == pattern) {
             return 10;
         }
     }
@@ -63,9 +62,10 @@ vector<uint16_t> possible_moves(uint16_t player, uint16_t agent) {
 }
 
 
-int minimax(uint16_t player, uint16_t agent, int depth, bool is_maximizing, int alpha, int beta) {
+int minimax(uint16_t player, uint16_t agent, int depth, bool is_maximizing, int alpha, int beta, int& nodes_counted) {
     int score = evaluate(player, agent);
 
+    ++nodes_counted;
     // agent won 
     if (score == 10) {
         return score - depth;
@@ -77,7 +77,6 @@ int minimax(uint16_t player, uint16_t agent, int depth, bool is_maximizing, int 
     else if (is_draw(player | agent)) {
         return 0;
     }
-
     vector<uint16_t> choices = possible_moves(player, agent);
 
     // the agent
@@ -85,7 +84,7 @@ int minimax(uint16_t player, uint16_t agent, int depth, bool is_maximizing, int 
         int best = -1000;
         for (uint16_t choice : choices) {
             agent |= 0b1 << choice;
-            best = max(best, minimax(player, agent, depth + 1, false, alpha, beta));
+            best = max(best, minimax(player, agent, depth + 1, false, alpha, beta, nodes_counted));
             agent ^= 0b1 << choice;
 
             alpha = max(alpha, best);
@@ -100,7 +99,7 @@ int minimax(uint16_t player, uint16_t agent, int depth, bool is_maximizing, int 
         int best = 1000;
         for (uint16_t choice : choices) {
             player |= 0b1 << choice;
-            best = min(best, minimax(player, agent, depth + 1, true, alpha, beta));
+            best = min(best, minimax(player, agent, depth + 1, true, alpha, beta, nodes_counted));
             player ^= 0b1 << choice;
 
             beta = min(beta, best);
@@ -117,7 +116,7 @@ int minimax(uint16_t player, uint16_t agent, int depth, bool is_maximizing, int 
 uint16_t find_best_move(uint16_t player, uint16_t agent) {
     int best_val = -1000;
     uint16_t best_move;
-
+    int nodes_counted = 0;
     // indexes of moves
     vector<uint16_t> choices = possible_moves(player, agent);
 
@@ -125,7 +124,7 @@ uint16_t find_best_move(uint16_t player, uint16_t agent) {
         // do the move
         agent |= 0b1 << choice;
 
-        int move_val = minimax(player, agent, 0, false, -1000, 1000);
+        int move_val = minimax(player, agent, 0, false, -1000, 1000, nodes_counted);
 
         // undo the move
         agent ^= 0b1 << choice;
@@ -135,6 +134,7 @@ uint16_t find_best_move(uint16_t player, uint16_t agent) {
             best_val = move_val;
         }
     }
+    cout << "nodes counted " << nodes_counted << endl;
     return best_move;
 }
 
