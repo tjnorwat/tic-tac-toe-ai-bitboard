@@ -1,5 +1,5 @@
-CXX = g++
-CXXFLAGS = -Ofast
+CXX = clang++
+CXXFLAGS = -Ofast -mavx2 -march=native -mtune=native
 
 negamax.out: negamax.cpp
 	$(CXX) $(CXXFLAGS) $^ -o $@

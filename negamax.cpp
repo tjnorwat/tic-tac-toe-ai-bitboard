@@ -2,25 +2,26 @@
 #include <chrono>
 #include <cstdint>
 #include <iostream>
+#include <immintrin.h>
 
 using namespace std;
 
-static constexpr uint16_t OUT_OF_BOUNDS = 0b1111111000000000;
 
-static constexpr uint16_t FULL_BOARD = 0b0000000111111111;
+static constexpr uint32_t FULL_BOARD = 0b0000000111111111;
+static constexpr uint32_t OUT_OF_BOUNDS = ~FULL_BOARD;
 
-static constexpr uint16_t COL_1 = 0b0000000100100100;
-static constexpr uint16_t COL_2 = 0b0000000010010010;
-static constexpr uint16_t COL_3 = 0b0000000001001001;
+static constexpr uint32_t COL_1 = 0b0000000100100100;
+static constexpr uint32_t COL_2 = 0b0000000010010010;
+static constexpr uint32_t COL_3 = 0b0000000001001001;
 
-static constexpr uint16_t ROW_1 = 0b0000000111000000;
-static constexpr uint16_t ROW_2 = 0b0000000000111000;
-static constexpr uint16_t ROW_3 = 0b0000000000000111;
+static constexpr uint32_t ROW_1 = 0b0000000111000000;
+static constexpr uint32_t ROW_2 = 0b0000000000111000;
+static constexpr uint32_t ROW_3 = 0b0000000000000111;
 
-static constexpr uint16_t DIAG_UP = 0b0000000001010100;
-static constexpr uint16_t DIAG_DOWN = 0b0000000100010001;
+static constexpr uint32_t DIAG_UP = 0b0000000001010100;
+static constexpr uint32_t DIAG_DOWN = 0b0000000100010001;
 
-static constexpr uint16_t WINNING_PATTERNS[] = {
+static constexpr uint32_t WINNING_PATTERNS[] = {
     COL_1, COL_2, COL_3,
     ROW_1, ROW_2, ROW_3,
     DIAG_UP, DIAG_DOWN
@@ -47,16 +48,16 @@ void init_random_keys() {
 // i think this is mainly for starting positions
 // since the board is empty it should just be 0 
 // will need this for snakes 
-uint64_t generate_hash_key(uint16_t player, uint16_t agent) {
+uint64_t generate_hash_key(uint32_t player, uint32_t agent) {
     uint64_t final_key = 0ULL;
 
     // player bitboard should be moved to global 
-    uint16_t temp_board = player;
+    uint32_t temp_board = player;
     int index;
     
-    uint16_t boards[] = {player, agent};
+    uint32_t boards[] = {player, agent};
 
-    for (uint16_t temp_board : boards) {
+    for (uint32_t temp_board : boards) {
         while (temp_board) {
             
             index = __builtin_ctz(temp_board);
@@ -73,9 +74,9 @@ uint64_t generate_hash_key(uint16_t player, uint16_t agent) {
 
 // 2 ^ n - 1
 // for fast 'modulus'
-uint16_t const hash_size = 2047;
-// uint16_t const hash_size = 32767;
-// uint16_t const hash_size = 65535;
+uint32_t const hash_size = 2047;
+// uint32_t const hash_size = 32767;
+// uint32_t const hash_size = 65535;
 // uint32_t const hash_size = 524288;
 
 #define hash_flag_exact 0
@@ -84,8 +85,8 @@ uint16_t const hash_size = 2047;
 
 struct tt {
     uint64_t hash_key;
-    uint16_t depth;
-    uint16_t flag;
+    uint32_t depth;
+    uint32_t flag;
     int value;
 };
 
@@ -104,7 +105,7 @@ tt read_hash_entry() {
     return hash_table[hash_key & hash_size];
 }
 
-void write_hash_entry(uint16_t depth, uint16_t hash_flag, int value) {
+void write_hash_entry(uint32_t depth, uint32_t hash_flag, int value) {
     // if the hash size is of power 2^n - 1 we can use the and operator instead of modulus
     tt *hash_entry = &hash_table[hash_key & hash_size];
 
@@ -115,22 +116,45 @@ void write_hash_entry(uint16_t depth, uint16_t hash_flag, int value) {
 }
 
 // this function checks individual player win positions and converts it to numerical values
-int evaluate(uint16_t player, uint16_t agent, uint16_t depth) {
-    for (uint16_t pattern : WINNING_PATTERNS) {
-        if ((player & pattern) == pattern) 
-            return -10 + depth;
-        else if ((agent & pattern) == pattern)
-            return 10 - depth;
-    }
+int evaluate(uint32_t player, uint32_t agent, uint32_t depth) {
+    __m256i agent_v = _mm256_set1_epi32(agent); // Load agent board into all elements
+    __m256i player_v = _mm256_set1_epi32(player); // Load player board into all elements
+
+    __m256i patterns_v = _mm256_loadu_si256((__m256i*)WINNING_PATTERNS);
+
+    // Perform bitwise AND with the patterns
+    __m256i agent_result = _mm256_and_si256(agent_v, patterns_v);
+    __m256i player_result = _mm256_and_si256(player_v, patterns_v);
+
+    // Compare the result with the patterns to check for a complete match
+    __m256i agent_win = _mm256_cmpeq_epi32(agent_result, patterns_v);
+    __m256i player_win = _mm256_cmpeq_epi32(player_result, patterns_v);
+
+    if (!_mm256_testz_si256(agent_win, _mm256_set1_epi32(-1))) 
+        return 10 - depth;
+    if (!_mm256_testz_si256(player_win, _mm256_set1_epi32(-1))) 
+        return -10 + depth;
+
     return 0;
 }
 
-constexpr bool is_draw(uint16_t board) {
+
+// int evaluate(uint32_t player, uint32_t agent, uint32_t depth) {
+//     for (const uint32_t pattern : WINNING_PATTERNS) {
+//         if ((player & pattern) == pattern) 
+//             return -10 + depth;
+//         else if ((agent & pattern) == pattern)
+//             return 10 - depth;
+//     }
+//     return 0;
+// }
+
+constexpr bool is_draw(uint32_t board) {
     return (board & FULL_BOARD) == FULL_BOARD;
 }
 
 // marker is used for the tt, between 0 player and 1 agent 
-int negamax(uint16_t player, uint16_t agent, uint16_t depth, int alpha, int beta, bool marker) {
+int negamax(uint32_t player, uint32_t agent, uint32_t depth, int alpha, int beta, bool marker) {
     int alpha_orig = alpha;
 
     // see if this position is in the transposition table 
@@ -149,7 +173,7 @@ int negamax(uint16_t player, uint16_t agent, uint16_t depth, int alpha, int beta
     }
 
     int score = evaluate(player, agent, depth);
-
+    // terminal state 
     if (score)
         return score;
     else if (is_draw(player | agent))
@@ -157,9 +181,9 @@ int negamax(uint16_t player, uint16_t agent, uint16_t depth, int alpha, int beta
 
     int value = INT32_MIN;
     // go through open positions 
-    uint16_t board = (~(player | agent)) ^ OUT_OF_BOUNDS;
+    uint32_t board = (~(player | agent)) ^ OUT_OF_BOUNDS;
     while (board) {
-        uint16_t choice = __builtin_ctz(board);
+        uint32_t choice = __builtin_ctz(board);
         board ^= 1u << choice;
         agent |= 1u << choice;
         hash_key ^= marker_keys[marker][choice];
@@ -189,15 +213,15 @@ int negamax(uint16_t player, uint16_t agent, uint16_t depth, int alpha, int beta
     return value;
 }
 
-uint16_t find_best_move(uint16_t player, uint16_t agent) {
+uint32_t find_best_move(uint32_t player, uint32_t agent) {
     int best_val = INT32_MIN;
-    uint16_t best_move;
+    uint32_t best_move;
 
     // board represents the positions where there is an open slot
-    uint16_t board = (~(player | agent)) ^ OUT_OF_BOUNDS;
+    uint32_t board = (~(player | agent)) ^ OUT_OF_BOUNDS;
     while (board) {
         // get the index of an open position
-        uint16_t choice = __builtin_ctz(board);
+        uint32_t choice = __builtin_ctz(board);
         // remove that index 
         board ^= 1u << choice;
 
@@ -219,8 +243,8 @@ uint16_t find_best_move(uint16_t player, uint16_t agent) {
     return best_move;
 }
 
-void print_board(uint16_t x_board, uint16_t o_board) {
-    uint16_t idx;
+void print_board(uint32_t x_board, uint32_t o_board) {
+    int idx;
     for (int i = 2; i >= 0; i--) {
         for (int j = 2; j >= 0; j--) {
             idx = 1u << (i * 3 + j);
@@ -236,11 +260,11 @@ void print_board(uint16_t x_board, uint16_t o_board) {
 }
 
 void play_game(bool human_goes_first) {
-    uint16_t player = 0u;
-    uint16_t agent = 0u;
+    uint32_t player = 0U;
+    uint32_t agent = 0U;
 
-    uint16_t move;
-    uint16_t ai_move;
+    uint32_t move;
+    uint32_t ai_move;
     
     cout << "Game starting" << endl;
 
@@ -303,6 +327,17 @@ void play_game(bool human_goes_first) {
     }
 }
 
+void benchmark() {
+    uint32_t agent = 0;
+    uint32_t player = 0;
+
+
+    agent |= 1;
+    evaluate(player, agent, 0);
+    print_board(agent, player);
+}
+
+
 int main() {
     init_random_keys();
     clear_hash_table();
@@ -310,6 +345,8 @@ int main() {
 
     bool human_goes_first = false;
     play_game(human_goes_first);
+
+    // benchmark();
 
     return 0;
 }
